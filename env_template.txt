@@ -1,0 +1,7 @@
+# Perplexity API設定
+PERPLEXITY_API_KEY=your_actual_perplexity_api_key_here
+
+# WordPress設定
+WP_URL=https://your-wordpress-site.com/wp-json/wp/v2/posts
+WP_USERNAME=your_username
+WP_APPLICATION_PASSWORD=your_application_password 
