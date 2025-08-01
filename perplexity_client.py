@@ -26,13 +26,14 @@ class PerplexityClient:
             "sonar-deep-research": "sonar-deep-research"
         }
     
-    def chat_completion(self, messages, model="sonar"):
+    def chat_completion(self, messages, model="sonar", max_tokens=4096):
         """
         Perplexity APIを使用してチャット補完を実行
         
         Args:
             messages (list): メッセージのリスト
             model (str): 使用するモデル名（キーまたはフルネーム）
+            max_tokens (int): 最大トークン数（デフォルト: 4096）
         
         Returns:
             dict: APIレスポンス
@@ -45,7 +46,7 @@ class PerplexityClient:
         payload = {
             "model": actual_model,
             "messages": messages,
-            "max_tokens": 1024,
+            "max_tokens": max_tokens,
             "temperature": 0.7,
             "stream": False
         }
@@ -122,7 +123,7 @@ def load_prompt_template(template_file):
         print(f"エラー: テンプレートファイルの読み込みに失敗しました: {e}")
         sys.exit(1)
 
-def create_blog_article(theme, client, prompt_template_file="prompt_template.txt"):
+def create_blog_article(theme, client, prompt_template_file="prompt_template.txt", max_tokens=4096):
     """
     ブログ記事を生成する
     
@@ -130,6 +131,7 @@ def create_blog_article(theme, client, prompt_template_file="prompt_template.txt
         theme (str): 記事のテーマ
         client (PerplexityClient): Perplexity APIクライアント
         prompt_template_file (str): プロンプトテンプレートファイルのパス
+        max_tokens (int): 最大トークン数（デフォルト: 4096）
     
     Returns:
         str: 生成されたブログ記事
@@ -147,8 +149,9 @@ def create_blog_article(theme, client, prompt_template_file="prompt_template.txt
     
     print(f"テーマ「{theme}」についてブログ記事を生成中...")
     print(f"使用テンプレート: {prompt_template_file}")
+    print(f"最大トークン数: {max_tokens}")
     
-    response = client.chat_completion(messages, model="sonar")
+    response = client.chat_completion(messages, model="sonar", max_tokens=max_tokens)
     
     if response:
         content = response.get('choices', [{}])[0].get('message', {}).get('content', '')
@@ -161,9 +164,10 @@ def main():
     try:
         # コマンドライン引数をチェック
         if len(sys.argv) < 2:
-            print("使用方法: python perplexity_client.py <テーマ> [プロンプトテンプレートファイル]")
+            print("使用方法: python perplexity_client.py <テーマ> [プロンプトテンプレートファイル] [最大トークン数]")
             print("例: python perplexity_client.py '健康な食事の作り方'")
             print("例: python perplexity_client.py '効率的な時間管理術' custom_prompt.txt")
+            print("例: python perplexity_client.py 'AI技術の最新動向' prompt_template.txt 8192")
             return
         
         # テーマを取得
@@ -171,6 +175,9 @@ def main():
         
         # プロンプトテンプレートファイルを取得（オプション）
         prompt_template_file = sys.argv[2] if len(sys.argv) > 2 else "prompt_template.txt"
+        
+        # 最大トークン数を取得（オプション）
+        max_tokens = int(sys.argv[3]) if len(sys.argv) > 3 else 4096
         
         # クライアントを初期化
         client = PerplexityClient()
@@ -184,7 +191,7 @@ def main():
             return
         
         # ブログ記事を生成
-        article = create_blog_article(theme, client, prompt_template_file)
+        article = create_blog_article(theme, client, prompt_template_file, max_tokens)
         
         print("\n" + "="*60)
         print("生成されたブログ記事")

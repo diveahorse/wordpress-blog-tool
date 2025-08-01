@@ -25,7 +25,7 @@ class IntegratedBlogTool:
         # Perplexityクライアントを初期化
         self.perplexity_client = PerplexityClient()
     
-    def generate_and_post_article(self, theme, status="draft", prompt_template_file="prompt_template.txt"):
+    def generate_and_post_article(self, theme, status="draft", prompt_template_file="prompt_template.txt", max_tokens=4096):
         """
         記事を生成してWordPressに投稿
         
@@ -33,16 +33,18 @@ class IntegratedBlogTool:
             theme (str): 記事のテーマ
             status (str): 投稿ステータス ("draft" または "publish")
             prompt_template_file (str): プロンプトテンプレートファイルのパス
+            max_tokens (int): 最大トークン数（デフォルト: 4096）
         
         Returns:
             dict: 投稿結果
         """
         print(f"テーマ '{theme}' で記事を生成中...")
         print(f"使用テンプレート: {prompt_template_file}")
+        print(f"最大トークン数: {max_tokens}")
         
         try:
             # 記事を生成
-            article = create_blog_article(theme, self.perplexity_client, prompt_template_file)
+            article = create_blog_article(theme, self.perplexity_client, prompt_template_file, max_tokens)
             
             if not article:
                 print("記事の生成に失敗しました。")
@@ -181,10 +183,11 @@ def main():
     try:
         # コマンドライン引数をチェック
         if len(sys.argv) < 2:
-            print("使用方法: python integrated_blog_tool.py <テーマ> [プロンプトテンプレートファイル] [投稿ステータス]")
+            print("使用方法: python integrated_blog_tool.py <テーマ> [プロンプトテンプレートファイル] [投稿ステータス] [最大トークン数]")
             print("例: python integrated_blog_tool.py '健康な食事の作り方'")
             print("例: python integrated_blog_tool.py '効率的な時間管理術' custom_prompt.txt")
             print("例: python integrated_blog_tool.py 'AI技術の最新動向' prompt_template.txt publish")
+            print("例: python integrated_blog_tool.py '最新技術トレンド' prompt_template.txt draft 8192")
             return
         
         # テーマを取得
@@ -195,6 +198,9 @@ def main():
         
         # 投稿ステータスを取得（オプション）
         status = sys.argv[3] if len(sys.argv) > 3 else "draft"
+        
+        # 最大トークン数を取得（オプション）
+        max_tokens = int(sys.argv[4]) if len(sys.argv) > 4 else 4096
         
         # ツールを初期化
         tool = IntegratedBlogTool()
@@ -208,7 +214,7 @@ def main():
             return
         
         # 記事を生成して投稿
-        result = tool.generate_and_post_article(theme, status, prompt_template_file)
+        result = tool.generate_and_post_article(theme, status, prompt_template_file, max_tokens)
         
         if result:
             print("\n" + "=" * 50)
