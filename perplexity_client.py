@@ -1,5 +1,6 @@
 import os
 import requests
+import sys
 from dotenv import load_dotenv
 
 # .envファイルから環境変数を読み込み
@@ -101,44 +102,51 @@ class PerplexityClient:
         for key, value in self.available_models.items():
             print(f"  {key}: {value}")
 
-def create_blog_article(theme, client):
+def load_prompt_template(template_file):
+    """
+    プロンプトテンプレートファイルを読み込む
+    
+    Args:
+        template_file (str): テンプレートファイルのパス
+    
+    Returns:
+        str: 読み込まれたプロンプトテンプレート
+    """
+    try:
+        with open(template_file, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print(f"エラー: テンプレートファイル '{template_file}' が見つかりません。")
+        sys.exit(1)
+    except Exception as e:
+        print(f"エラー: テンプレートファイルの読み込みに失敗しました: {e}")
+        sys.exit(1)
+
+def create_blog_article(theme, client, prompt_template_file="prompt_template.txt"):
     """
     ブログ記事を生成する
     
     Args:
         theme (str): 記事のテーマ
         client (PerplexityClient): Perplexity APIクライアント
+        prompt_template_file (str): プロンプトテンプレートファイルのパス
     
     Returns:
         str: 生成されたブログ記事
     """
     
-    # Webライターとしてのプロンプト
-    prompt = f"""あなたはプロのWebライターです。
-以下の【テーマ】について【ステップ】に従って
-ブログ記事を書いてください。
-
-#テーマ
-{theme}
-
-#ステップ
-1: テーマにあわせた記事のタイトルを多数考えて、その中から、SEOの観点から、もっともアクセス数が伸び、読者がクリックしたくなると予測される{{タイトル}}を選びます。
-
-2: {{タイトル}}をもとに、5つの記事ブロックに分けて{{アウトライン}}を作成します。
-
-3: {{アウトライン}} を元に、第1ブロックの{{記事文章}}を作成します。
-
-4: {{記事文章}}を、SEOと読みやすさの観点から、修正して{{最終文章}} として出力します。
-
-5: 同様にして、第2ブロック、第3ブロック、第4ブロック、第5ブロックまでの{{最終文章}}を出力します。
-
-6: すべてのブロックの内容を要約して、まとめの文章を作成します。SEOと読みやすさの観点から、それを修正して{{まとめの文章}} として出力します。"""
-
+    # プロンプトテンプレートを読み込み
+    prompt_template = load_prompt_template(prompt_template_file)
+    
+    # テーマをテンプレートに挿入
+    prompt = prompt_template.format(theme=theme)
+    
     messages = [
         {"role": "user", "content": prompt}
     ]
     
     print(f"テーマ「{theme}」についてブログ記事を生成中...")
+    print(f"使用テンプレート: {prompt_template_file}")
     
     response = client.chat_completion(messages, model="sonar")
     
@@ -151,6 +159,19 @@ def create_blog_article(theme, client):
 def main():
     """使用例"""
     try:
+        # コマンドライン引数をチェック
+        if len(sys.argv) < 2:
+            print("使用方法: python perplexity_client.py <テーマ> [プロンプトテンプレートファイル]")
+            print("例: python perplexity_client.py '健康な食事の作り方'")
+            print("例: python perplexity_client.py '効率的な時間管理術' custom_prompt.txt")
+            return
+        
+        # テーマを取得
+        theme = sys.argv[1]
+        
+        # プロンプトテンプレートファイルを取得（オプション）
+        prompt_template_file = sys.argv[2] if len(sys.argv) > 2 else "prompt_template.txt"
+        
         # クライアントを初期化
         client = PerplexityClient()
         
@@ -158,15 +179,12 @@ def main():
         client.list_models()
         print()
         
-        # テーマを入力
-        theme = input("ブログ記事のテーマを入力してください: ")
-        
         if not theme.strip():
             print("テーマが入力されていません。")
             return
         
         # ブログ記事を生成
-        article = create_blog_article(theme, client)
+        article = create_blog_article(theme, client, prompt_template_file)
         
         print("\n" + "="*60)
         print("生成されたブログ記事")

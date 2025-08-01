@@ -1,6 +1,7 @@
 import os
 import requests
 import base64
+import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from perplexity_client import PerplexityClient, create_blog_article
@@ -24,22 +25,24 @@ class IntegratedBlogTool:
         # Perplexityクライアントを初期化
         self.perplexity_client = PerplexityClient()
     
-    def generate_and_post_article(self, theme, status="draft"):
+    def generate_and_post_article(self, theme, status="draft", prompt_template_file="prompt_template.txt"):
         """
         記事を生成してWordPressに投稿
         
         Args:
             theme (str): 記事のテーマ
             status (str): 投稿ステータス ("draft" または "publish")
+            prompt_template_file (str): プロンプトテンプレートファイルのパス
         
         Returns:
             dict: 投稿結果
         """
         print(f"テーマ '{theme}' で記事を生成中...")
+        print(f"使用テンプレート: {prompt_template_file}")
         
         try:
             # 記事を生成
-            article = create_blog_article(theme, self.perplexity_client)
+            article = create_blog_article(theme, self.perplexity_client, prompt_template_file)
             
             if not article:
                 print("記事の生成に失敗しました。")
@@ -176,6 +179,23 @@ def main():
     print("=" * 50)
     
     try:
+        # コマンドライン引数をチェック
+        if len(sys.argv) < 2:
+            print("使用方法: python integrated_blog_tool.py <テーマ> [プロンプトテンプレートファイル] [投稿ステータス]")
+            print("例: python integrated_blog_tool.py '健康な食事の作り方'")
+            print("例: python integrated_blog_tool.py '効率的な時間管理術' custom_prompt.txt")
+            print("例: python integrated_blog_tool.py 'AI技術の最新動向' prompt_template.txt publish")
+            return
+        
+        # テーマを取得
+        theme = sys.argv[1]
+        
+        # プロンプトテンプレートファイルを取得（オプション）
+        prompt_template_file = sys.argv[2] if len(sys.argv) > 2 else "prompt_template.txt"
+        
+        # 投稿ステータスを取得（オプション）
+        status = sys.argv[3] if len(sys.argv) > 3 else "draft"
+        
         # ツールを初期化
         tool = IntegratedBlogTool()
         
@@ -183,17 +203,12 @@ def main():
         tool.test_connections()
         print()
         
-        # ユーザーからテーマを入力
-        theme = input("記事のテーマを入力してください: ").strip()
-        if not theme:
-            theme = "AI技術の最新動向"
-        
-        # 投稿ステータスを選択
-        status_choice = input("投稿ステータスを選択してください (1: 下書き, 2: 公開) [1]: ").strip()
-        status = "publish" if status_choice == "2" else "draft"
+        if not theme.strip():
+            print("テーマが入力されていません。")
+            return
         
         # 記事を生成して投稿
-        result = tool.generate_and_post_article(theme, status)
+        result = tool.generate_and_post_article(theme, status, prompt_template_file)
         
         if result:
             print("\n" + "=" * 50)

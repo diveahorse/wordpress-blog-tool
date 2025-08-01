@@ -6,6 +6,7 @@
 
 ### 1. ブログ記事生成機能
 - Perplexity APIを使用した高品質なブログ記事の自動生成
+- カスタマイズ可能なプロンプトテンプレート
 - SEO最適化されたタイトルとコンテンツ
 - 5つのブロック構成の記事
 - 自動ファイル保存
@@ -18,14 +19,17 @@
 
 ## セットアップ
 
-### 1. 仮想環境の有効化
-```bash
-source venv/bin/activate
-```
-
-### 2. 依存関係のインストール
+### 1. 依存関係のインストール
 ```bash
 pip install -r requirements.txt
+```
+
+### 2. 仮想環境の使用（推奨）
+```bash
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+# または
+venv\Scripts\activate     # Windows
 ```
 
 ### 3. 環境変数の設定
@@ -49,44 +53,93 @@ WP_APPLICATION_PASSWORD=your_application_password
 
 ### ブログ記事生成
 
+#### 基本的な使用方法
+```bash
+# デフォルトのプロンプトテンプレートを使用
+python perplexity_client.py "健康な食事の作り方"
+
+# カスタムプロンプトテンプレートを使用
+python perplexity_client.py "効率的な時間管理術" custom_prompt.txt
+```
+
+#### プログラムから使用
 ```python
 from perplexity_client import PerplexityClient, create_blog_article
 
 # クライアントを初期化
 client = PerplexityClient()
 
-# ブログ記事を生成
+# デフォルトテンプレートでブログ記事を生成
 theme = "健康な食事の作り方"
 article = create_blog_article(theme, client)
+
+# カスタムテンプレートでブログ記事を生成
+article = create_blog_article(theme, client, "custom_prompt.txt")
 print(article)
 ```
 
 ### WordPress投稿
 
-```python
-from simple_main import create_post_with_requests_auth
+#### 基本的な使用方法
+```bash
+# デフォルトテンプレートで下書きとして投稿
+python integrated_blog_tool.py "健康な食事の作り方"
 
-# 投稿を作成
-title = "記事タイトル"
-content = "<h2>記事内容</h2><p>HTML形式で記述</p>"
-result = create_post_with_requests_auth(title, content, "draft")
+# カスタムテンプレートで公開として投稿
+python integrated_blog_tool.py "効率的な時間管理術" custom_prompt.txt publish
+```
+
+#### プログラムから使用
+```python
+from integrated_blog_tool import IntegratedBlogTool
+
+# ツールを初期化
+tool = IntegratedBlogTool()
+
+# 記事を生成してWordPressに投稿
+result = tool.generate_and_post_article("健康な食事の作り方", "draft", "prompt_template.txt")
 ```
 
 ### 実行例
 
 1. **ブログ記事生成**:
 ```bash
-python perplexity_client.py
+python perplexity_client.py "健康な食事の作り方"
 ```
 
 2. **WordPress投稿**:
 ```bash
-python simple_main.py
+python integrated_blog_tool.py "効率的な時間管理術"
 ```
 
 3. **統合実行**:
 ```bash
-python integrated_blog_tool.py
+python integrated_blog_tool.py "AI技術の最新動向" prompt_template.txt publish
+```
+
+## プロンプトテンプレート
+
+### デフォルトテンプレート
+`prompt_template.txt`ファイルには、ブログ記事生成用のプロンプトテンプレートが含まれています。
+
+### カスタムテンプレートの作成
+独自のプロンプトテンプレートを作成する場合：
+
+1. 新しいテキストファイルを作成
+2. プロンプトを記述（`{theme}`プレースホルダーを使用）
+3. ファイルを引数として指定
+
+例：
+```txt
+あなたは専門的な技術ライターです。
+以下のテーマについて詳細な記事を書いてください：
+
+テーマ: {theme}
+
+要求事項：
+- 技術的な詳細を含める
+- 実践的な例を提供する
+- 最新のトレンドを反映する
 ```
 
 ## WordPress設定
@@ -141,11 +194,10 @@ Perplexity APIの利用可能なモデル：
 
 ## 注意事項
 
-- APIキーは必ず.envファイルで管理し、Gitにコミットしないでください
-- .envファイルは.gitignoreに追加することを推奨します
 - Perplexity APIの利用制限と料金体系を確認してください
 - 生成された記事は参考として使用し、必要に応じて編集してください
 - 大量の投稿は避けてください
+- プロンプトテンプレートは適切に管理し、機密情報を含めないでください
 
 ## ファイル構成
 
@@ -153,7 +205,8 @@ Perplexity APIの利用可能なモデル：
 wordpress/
 ├── perplexity_client.py    # Perplexity APIクライアント
 ├── simple_main.py         # WordPress投稿機能
-├── integrated_blog_tool.py # 統合ツール（新規作成予定）
+├── integrated_blog_tool.py # 統合ツール
+├── prompt_template.txt    # プロンプトテンプレート
 ├── requirements.txt       # 依存関係
 ├── .env                  # 環境変数（要作成）
 ├── .gitignore           # Git除外設定
