@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}{{ theme }} - 記事表示{% endblock %}
+
+{% block extra_css %}
+<style>
+.article-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.article-content h1 {
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
+
+.article-content h2 {
+    color: #34495e;
+    border-left: 4px solid #3498db;
+    padding-left: 15px;
+    margin: 30px 0 20px 0;
+}
+
+.article-content h3 {
+    color: #2c3e50;
+    margin: 25px 0 15px 0;
+}
+
+.article-content p {
+    margin-bottom: 20px;
+}
+
+.article-content ul, .article-content ol {
+    margin-bottom: 20px;
+    padding-left: 30px;
+}
+
+.article-content li {
+    margin-bottom: 8px;
+}
+
+.article-content blockquote {
+    border-left: 4px solid #3498db;
+    padding-left: 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: #555;
+}
+
+.article-content code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.article-content pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+.article-content pre code {
+    background: none;
+    padding: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('history') }}">
+                                <i class="fas fa-history me-1"></i>履歴
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">記事表示</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-file-alt me-2"></i>{{ theme }}
+                </h1>
+                <p class="text-muted mb-0">
+                    ファイル: {{ filename }}
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <button class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>印刷
+                </button>
+                <a href="{{ url_for('delete_article', filename=filename) }}" 
+                   class="btn btn-outline-danger"
+                   onclick="return confirm('このファイルを削除しますか？')">
+                    <i class="fas fa-trash me-1"></i>削除
+                </a>
+            </div>
+        </div>
+
+        <!-- Article Content -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye me-2"></i>記事内容
+                    </h5>
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-clock me-1"></i>
+                            生成日時: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="article-content">
+                    {{ content|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Article Info -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>記事情報
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>テーマ:</strong><br>
+                                <span class="text-muted">{{ theme }}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>ファイル名:</strong><br>
+                                <code class="small">{{ filename }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools me-2"></i>操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                <i class="fas fa-magic me-1"></i>新しい記事を生成
+                            </a>
+                            <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i>履歴に戻る
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// マークダウンの基本的な変換（必要に応じて）
+document.addEventListener('DOMContentLoaded', function() {
+    // 必要に応じてマークダウンの変換処理を追加
+    console.log('記事表示ページが読み込まれました');
+});
+</script>
+{% endblock %}
