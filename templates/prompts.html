@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}プロンプト管理 - WordPressブログ管理ツール{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3">
+                    <i class="fas fa-file-alt me-2"></i>プロンプトテンプレート管理
+                </h1>
+                <p class="text-muted mb-0">
+                    記事生成に使用するプロンプトテンプレートを管理できます
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('create_prompt') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>新規作成
+                </a>
+                <a href="{{ url_for('refresh_prompts') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt me-1"></i>再読み込み
+                </a>
+            </div>
+        </div>
+
+        {% if prompt_templates %}
+        <!-- Templates Grid -->
+        <div class="row">
+            {% for template_name, template in prompt_templates.items() %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-file-alt me-2"></i>{{ template.name }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            {{ template.description }}
+                        </p>
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <small class="text-muted">ファイル名</small><br>
+                                <code class="small">{{ template.file }}</code>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">サイズ</small><br>
+                                <span class="badge bg-secondary">{{ "%.1f"|format(template.size / 1024) }} KB</span>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('view_prompt', template_name=template_name) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>詳細表示
+                            </a>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('edit_prompt', template_name=template_name) }}" 
+                                   class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="deletePrompt('{{ template_name }}', '{{ template.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Summary -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ prompt_templates|length }}</h4>
+                        <small>テンプレート数</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ "%.1f"|format(prompt_templates.values()|sum(attribute='size') / 1024) }}</h4>
+                        <small>総サイズ (KB)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h4 class="mb-0">{{ prompt_templates.values()|map(attribute='size')|list|max }}</h4>
+                        <small>最大ファイルサイズ (bytes)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">プロンプトテンプレートがありません</h4>
+                <p class="text-muted mb-4">
+                    最初のプロンプトテンプレートを作成してみましょう！
+                </p>
+                <a href="{{ url_for('create_prompt') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>テンプレートを作成
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">テンプレート削除の確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>テンプレート「<span id="deleteTemplateName"></span>」を削除しますか？</p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    この操作は取り消せません。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deletePrompt(templateName, templateDisplayName) {
+    document.getElementById('deleteTemplateName').textContent = templateDisplayName;
+    document.getElementById('deleteForm').action = `/prompts/delete/${templateName}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

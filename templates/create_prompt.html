@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}プロンプトテンプレート作成 - WordPressブログ管理ツール{% endblock %}
+
+{% block extra_css %}
+<style>
+.prompt-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    min-height: 400px;
+    resize: vertical;
+}
+
+.template-examples {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.template-example {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.template-example:hover {
+    background-color: #f8f9fa;
+}
+
+.template-example.selected {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('prompts') }}">
+                                <i class="fas fa-file-alt me-1"></i>プロンプト管理
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">新規作成</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-plus me-2"></i>プロンプトテンプレート作成
+                </h1>
+                <p class="text-muted mb-0">
+                    新しいプロンプトテンプレートを作成します
+                </p>
+            </div>
+            <a href="{{ url_for('prompts') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>戻る
+            </a>
+        </div>
+
+        <form id="createPromptForm">
+            <!-- Template Name -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tag me-2"></i>テンプレート名
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="templateName" class="form-label">テンプレート名 *</label>
+                        <input type="text" class="form-control" id="templateName" name="templateName" 
+                               placeholder="例: ニュース記事用、レビュー記事用、技術解説用" required>
+                        <div class="form-text">
+                            テンプレートの用途や特徴を表す名前を入力してください。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Content -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code me-2"></i>テンプレート内容
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="templateContent" class="form-label">プロンプト内容 *</label>
+                        <textarea class="form-control prompt-editor" id="templateContent" name="templateContent" 
+                                  placeholder="プロンプトテンプレートの内容を入力してください。&#10;&#10;例:&#10;あなたはプロのWebライターです。&#10;以下の【テーマ】について記事を書いてください。&#10;&#10;#テーマ&#10;{theme}&#10;&#10;#要件&#10;- 文字数: 2000字程度&#10;- 構成: 導入、本文、まとめ&#10;- トーン: 親しみやすく、分かりやすい" required></textarea>
+                        <div class="form-text">
+                            記事生成に使用するプロンプトテンプレートを入力してください。{theme}は記事のテーマに置き換えられます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Examples -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>テンプレート例
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        以下のテンプレート例を参考にしてください。クリックすると内容がコピーされます。
+                    </p>
+                    <div class="template-examples">
+                        <div class="template-example p-3 border rounded mb-2" onclick="loadExample('basic')">
+                            <h6 class="mb-2">基本的な記事テンプレート</h6>
+                            <p class="text-muted small mb-0">
+                                一般的なブログ記事用のシンプルなテンプレート
+                            </p>
+                        </div>
+                        <div class="template-example p-3 border rounded mb-2" onclick="loadExample('review')">
+                            <h6 class="mb-2">レビュー記事テンプレート</h6>
+                            <p class="text-muted small mb-0">
+                                商品やサービスのレビュー記事用テンプレート
+                            </p>
+                        </div>
+                        <div class="template-example p-3 border rounded mb-2" onclick="loadExample('howto')">
+                            <h6 class="mb-2">ハウツー記事テンプレート</h6>
+                            <p class="text-muted small mb-0">
+                                手順や方法を説明する記事用テンプレート
+                            </p>
+                        </div>
+                        <div class="template-example p-3 border rounded mb-2" onclick="loadExample('news')">
+                            <h6 class="mb-2">ニュース記事テンプレート</h6>
+                            <p class="text-muted small mb-0">
+                                最新ニュースや情報を伝える記事用テンプレート
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('prompts') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save me-1"></i>テンプレートを作成
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// テンプレート例の定義
+const templateExamples = {
+    basic: {
+        name: "基本的な記事テンプレート",
+        content: `あなたはプロのWebライターです。
+以下の【テーマ】について記事を書いてください。
+
+#テーマ
+{theme}
+
+#要件
+- 文字数: 2000字程度
+- 構成: 導入、本文、まとめ
+- トーン: 親しみやすく、分かりやすい
+- 読者: 一般向け
+
+#構成
+1. 導入（テーマの概要）
+2. 本文（詳細な説明）
+3. まとめ（要点の整理）
+
+#注意事項
+- SEOを意識したタイトルと見出し
+- 読みやすい文章構成
+- 具体例やデータを含める`
+    },
+    review: {
+        name: "レビュー記事テンプレート",
+        content: `あなたはプロのレビュアーです。
+以下の【テーマ】について詳細なレビュー記事を書いてください。
+
+#テーマ
+{theme}
+
+#レビュー構成
+1. 商品・サービス概要
+2. 主な特徴・機能
+3. メリット・デメリット
+4. 実際の使用体験
+5. 価格・コストパフォーマンス
+6. 対象ユーザー
+7. 総合評価・おすすめ度
+
+#要件
+- 文字数: 2500字程度
+- 客観的な評価
+- 具体的な使用例
+- 比較検討を含める
+- 読者の判断材料を提供`
+    },
+    howto: {
+        name: "ハウツー記事テンプレート",
+        content: `あなたはプロのインストラクターです。
+以下の【テーマ】について、初心者でも分かる手順書を書いてください。
+
+#テーマ
+{theme}
+
+#構成
+1. 概要・目的
+2. 必要な準備・材料
+3. 手順（ステップバイステップ）
+4. 注意点・コツ
+5. よくある失敗と対処法
+6. 応用・発展
+
+#要件
+- 文字数: 2000字程度
+- 分かりやすい手順説明
+- 図解や例を想定した説明
+- 初心者向けの配慮
+- 安全面の注意事項`
+    },
+    news: {
+        name: "ニュース記事テンプレート",
+        content: `あなたはプロのニュースライターです。
+以下の【テーマ】について、最新のニュース記事を書いてください。
+
+#テーマ
+{theme}
+
+#構成
+1. ヘッドライン（重要な情報）
+2. リード（概要・要点）
+3. 背景・経緯
+4. 詳細な内容
+5. 影響・今後の展望
+6. 関連情報・参考資料
+
+#要件
+- 文字数: 1800字程度
+- 客観的な事実報道
+- 最新情報の正確性
+- 読者の関心を引く構成
+- 信頼性の高い情報源`
+    }
+};
+
+// テンプレート例を読み込み
+function loadExample(type) {
+    if (templateExamples[type]) {
+        const example = templateExamples[type];
+        document.getElementById('templateName').value = example.name;
+        document.getElementById('templateContent').value = example.content;
+        
+        // 選択状態を視覚的に表示
+        document.querySelectorAll('.template-example').forEach(el => {
+            el.classList.remove('selected');
+        });
+        event.currentTarget.classList.add('selected');
+        
+        // フォーカスを移動
+        document.getElementById('templateContent').focus();
+    }
+}
+
+// フォーム送信処理
+document.getElementById('createPromptForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const templateName = document.getElementById('templateName').value.trim();
+    const templateContent = document.getElementById('templateContent').value.trim();
+    
+    if (!templateName || !templateContent) {
+        alert('テンプレート名と内容を入力してください。');
+        return;
+    }
+    
+    // 送信ボタンを無効化
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>作成中...';
+    
+    // APIに送信
+    fetch('/prompts/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: templateName,
+            content: templateContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('テンプレートを作成しました！');
+            window.location.href = '/prompts';
+        } else {
+            alert('エラー: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('エラーが発生しました: ' + error);
+    })
+    .finally(() => {
+        // ボタンを元に戻す
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>テンプレートを作成';
+    });
+});
+</script>
+{% endblock %}

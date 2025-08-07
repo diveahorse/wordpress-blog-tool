@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template.name }} - プロンプト編集{% endblock %}
+
+{% block extra_css %}
+<style>
+.prompt-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    min-height: 400px;
+    resize: vertical;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('prompts') }}">
+                                <i class="fas fa-file-alt me-1"></i>プロンプト管理
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('view_prompt', template_name=template_name) }}">
+                                {{ template.name }}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">編集</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-edit me-2"></i>{{ template.name }} - 編集
+                </h1>
+                <p class="text-muted mb-0">
+                    プロンプトテンプレートを編集します
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('view_prompt', template_name=template_name) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="deletePrompt('{{ template_name }}', '{{ template.name }}')">
+                    <i class="fas fa-trash me-1"></i>削除
+                </button>
+            </div>
+        </div>
+
+        <form id="editPromptForm">
+            <!-- Template Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>テンプレート情報
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>テンプレート名:</strong><br>
+                            <span class="text-muted">{{ template.name }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ファイル名:</strong><br>
+                            <code class="small">{{ template.file }}</code>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>ファイルサイズ:</strong><br>
+                            <span class="badge bg-secondary">{{ "%.1f"|format(template.size / 1024) }} KB</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>文字数:</strong><br>
+                            <span class="badge bg-info">{{ template.size }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Content -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code me-2"></i>テンプレート内容
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="templateContent" class="form-label">プロンプト内容 *</label>
+                        <textarea class="form-control prompt-editor" id="templateContent" name="templateContent" 
+                                  required>{{ template.content }}</textarea>
+                        <div class="form-text">
+                            記事生成に使用するプロンプトテンプレートを編集してください。{theme}は記事のテーマに置き換えられます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye me-2"></i>プレビュー
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="previewTheme" class="form-label">プレビュー用テーマ</label>
+                        <input type="text" class="form-control" id="previewTheme" 
+                               placeholder="例: 健康な食事の作り方" value="健康な食事の作り方">
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="updatePreview()">
+                            <i class="fas fa-sync-alt me-1"></i>プレビュー更新
+                        </button>
+                    </div>
+                    <div class="border rounded p-3 bg-light">
+                        <h6>プレビュー:</h6>
+                        <div id="previewContent" class="small"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('view_prompt', template_name=template_name) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-warning" id="submitBtn">
+                            <i class="fas fa-save me-1"></i>変更を保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">テンプレート削除の確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>テンプレート「<span id="deleteTemplateName"></span>」を削除しますか？</p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    この操作は取り消せません。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// プレビュー更新
+function updatePreview() {
+    const templateContent = document.getElementById('templateContent').value;
+    const previewTheme = document.getElementById('previewTheme').value || '健康な食事の作り方';
+    
+    // {theme}を実際のテーマに置き換え
+    const previewContent = templateContent.replace(/{theme}/g, previewTheme);
+    
+    // プレビュー表示（改行を保持）
+    document.getElementById('previewContent').innerHTML = previewContent.replace(/\n/g, '<br>');
+}
+
+// ページ読み込み時にプレビューを初期化
+document.addEventListener('DOMContentLoaded', function() {
+    updatePreview();
+});
+
+// 削除確認
+function deletePrompt(templateName, templateDisplayName) {
+    document.getElementById('deleteTemplateName').textContent = templateDisplayName;
+    document.getElementById('deleteForm').action = `/prompts/delete/${templateName}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// フォーム送信処理
+document.getElementById('editPromptForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const templateContent = document.getElementById('templateContent').value.trim();
+    
+    if (!templateContent) {
+        alert('テンプレート内容を入力してください。');
+        return;
+    }
+    
+    // 送信ボタンを無効化
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>保存中...';
+    
+    // APIに送信
+    fetch('/prompts/edit/{{ template_name }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: templateContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('テンプレートを更新しました！');
+            window.location.href = '/prompts/view/{{ template_name }}';
+        } else {
+            alert('エラー: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('エラーが発生しました: ' + error);
+    })
+    .finally(() => {
+        // ボタンを元に戻す
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>変更を保存';
+    });
+});
+
+// テキストエリアの変更時にプレビューを自動更新
+document.getElementById('templateContent').addEventListener('input', function() {
+    // デバウンス処理（入力が止まってから500ms後に更新）
+    clearTimeout(this.previewTimeout);
+    this.previewTimeout = setTimeout(updatePreview, 500);
+});
+
+// プレビューテーマの変更時にプレビューを自動更新
+document.getElementById('previewTheme').addEventListener('input', function() {
+    clearTimeout(this.previewTimeout);
+    this.previewTimeout = setTimeout(updatePreview, 300);
+});
+</script>
+{% endblock %}
