@@ -279,6 +279,76 @@ def create_prompt():
     
     return render_template('create_prompt.html')
 
+@app.route('/prompts/generate', methods=['POST'])
+def generate_prompt():
+    """AIを使用してプロンプトテンプレートを生成"""
+    try:
+        data = request.get_json()
+        prompt_type = data.get('prompt_type', '').strip()
+        target_audience = data.get('target_audience', '').strip()
+        content_style = data.get('content_style', '').strip()
+        additional_requirements = data.get('additional_requirements', '').strip()
+        
+        if not prompt_type:
+            return jsonify({'error': 'プロンプトタイプを入力してください。'})
+        
+        # AI生成用のプロンプトを作成
+        ai_prompt = f"""
+あなたはプロのプロンプトエンジニアです。
+以下の要件に基づいて、ブログ記事生成用のプロンプトテンプレートを作成してください。
+
+#要件
+- プロンプトタイプ: {prompt_type}
+- ターゲット読者: {target_audience or '一般向け'}
+- コンテンツスタイル: {content_style or '親しみやすく、分かりやすい'}
+- 追加要件: {additional_requirements or 'なし'}
+
+#作成するプロンプトの仕様
+- 記事生成AI（Perplexity）が理解しやすい形式
+- 具体的で実行可能な指示
+- 文字数制限や構成の指定
+- SEOを意識した内容
+- {{theme}}プレースホルダーを使用（記事のテーマに置き換えられる）
+
+#出力形式
+- 日本語で作成
+- 明確な構造（見出し、箇条書き等）
+- 実用的で効果的なプロンプト
+
+プロンプトテンプレートを作成してください。
+"""
+        
+        # Perplexity APIを使用してプロンプトを生成
+        client = PerplexityClient()
+        messages = [
+            {"role": "user", "content": ai_prompt}
+        ]
+        
+        response = client.chat_completion(messages, model="sonar", max_tokens=2048)
+        
+        if response:
+            generated_content = response.get('choices', [{}])[0].get('message', {}).get('content', '')
+            
+            # 生成された内容をクリーンアップ
+            generated_content = generated_content.strip()
+            
+            # 不要な装飾を削除
+            if generated_content.startswith('```'):
+                generated_content = generated_content.split('```', 2)[1]
+            if generated_content.endswith('```'):
+                generated_content = generated_content.rsplit('```', 1)[0]
+            
+            return jsonify({
+                'success': True,
+                'content': generated_content,
+                'suggested_name': f"{prompt_type}用テンプレート"
+            })
+        else:
+            return jsonify({'error': 'AIによるプロンプト生成に失敗しました。'})
+            
+    except Exception as e:
+        return jsonify({'error': f'プロンプト生成でエラーが発生しました: {str(e)}'})
+
 @app.route('/prompts/edit/<template_name>', methods=['GET', 'POST'])
 def edit_prompt(template_name):
     """プロンプトテンプレートを編集"""

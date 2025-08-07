@@ -61,6 +61,83 @@
             </a>
         </div>
 
+        <!-- AI Generation Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-magic me-2"></i>AIによるプロンプト生成
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    AIを使用してプロンプトテンプレートを自動生成できます。
+                </p>
+                
+                <form id="aiGenerationForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="promptType" class="form-label">プロンプトタイプ *</label>
+                                <input type="text" class="form-control" id="promptType" name="promptType" 
+                                       placeholder="例: ニュース記事、レビュー記事、ハウツー記事、技術解説" required>
+                                <div class="form-text">
+                                    作成したいプロンプトの種類を入力してください。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="targetAudience" class="form-label">ターゲット読者</label>
+                                <input type="text" class="form-control" id="targetAudience" name="targetAudience" 
+                                       placeholder="例: 初心者、ビジネスパーソン、学生">
+                                <div class="form-text">
+                                    想定する読者層を入力してください。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="contentStyle" class="form-label">コンテンツスタイル</label>
+                                <input type="text" class="form-control" id="contentStyle" name="contentStyle" 
+                                       placeholder="例: 親しみやすく、専門的、カジュアル">
+                                <div class="form-text">
+                                    記事のトーンやスタイルを指定してください。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="additionalRequirements" class="form-label">追加要件</label>
+                                <input type="text" class="form-control" id="additionalRequirements" name="additionalRequirements" 
+                                       placeholder="例: SEO最適化、具体例を含める">
+                                <div class="form-text">
+                                    特別な要件があれば入力してください。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <i class="fas fa-magic me-2"></i>AIでプロンプトを生成
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Generation Progress -->
+                <div id="generationProgress" class="mt-3" style="display: none;">
+                    <div class="progress mb-2">
+                        <div id="generationProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="generationStatus" class="text-muted mb-0 small">AIがプロンプトを生成中...</p>
+                </div>
+            </div>
+        </div>
+
         <form id="createPromptForm">
             <!-- Template Name -->
             <div class="card mb-4">
@@ -275,6 +352,88 @@ function loadExample(type) {
         document.getElementById('templateContent').focus();
     }
 }
+
+// AI生成フォーム送信処理
+document.getElementById('aiGenerationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const promptType = document.getElementById('promptType').value.trim();
+    const targetAudience = document.getElementById('targetAudience').value.trim();
+    const contentStyle = document.getElementById('contentStyle').value.trim();
+    const additionalRequirements = document.getElementById('additionalRequirements').value.trim();
+    
+    if (!promptType) {
+        alert('プロンプトタイプを入力してください。');
+        return;
+    }
+    
+    // 生成ボタンを無効化
+    const generateBtn = document.getElementById('generateBtn');
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>生成中...';
+    
+    // 進捗表示を開始
+    const progressDiv = document.getElementById('generationProgress');
+    const progressBar = document.getElementById('generationProgressBar');
+    const statusText = document.getElementById('generationStatus');
+    
+    progressDiv.style.display = 'block';
+    progressBar.style.width = '0%';
+    statusText.textContent = 'AIがプロンプトを生成中...';
+    
+    // 進捗アニメーション
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+    }, 500);
+    
+    // APIに送信
+    fetch('/prompts/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            prompt_type: promptType,
+            target_audience: targetAudience,
+            content_style: contentStyle,
+            additional_requirements: additionalRequirements
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        statusText.textContent = '生成完了！';
+        
+        if (data.success) {
+            // 生成された内容をフォームに設定
+            document.getElementById('templateName').value = data.suggested_name;
+            document.getElementById('templateContent').value = data.content;
+            
+            // 成功メッセージ
+            setTimeout(() => {
+                progressDiv.style.display = 'none';
+                alert('AIがプロンプトを生成しました！内容を確認してから保存してください。');
+            }, 1000);
+        } else {
+            alert('エラー: ' + data.error);
+            progressDiv.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        clearInterval(progressInterval);
+        alert('エラーが発生しました: ' + error);
+        progressDiv.style.display = 'none';
+    })
+    .finally(() => {
+        // ボタンを元に戻す
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fas fa-magic me-2"></i>AIでプロンプトを生成';
+    });
+});
 
 // フォーム送信処理
 document.getElementById('createPromptForm').addEventListener('submit', function(e) {
