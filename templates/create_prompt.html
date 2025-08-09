@@ -74,47 +74,311 @@
                 </p>
                 
                 <form id="aiGenerationForm">
+                    <!-- 記事テーマ設定 -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="articleTheme" class="form-label">記事テーマ例 *</label>
+                                <input type="text" class="form-control" id="articleTheme" name="articleTheme" 
+                                       placeholder="例: 健康な食事の作り方、効率的な時間管理術、AI技術の最新動向" required>
+                                <div class="form-text">
+                                    このプロンプトで生成する記事のテーマ例を入力してください。AIがより適切なプロンプトを生成するために使用されます。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本設定 -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="promptType" class="form-label">プロンプトタイプ *</label>
-                                <input type="text" class="form-control" id="promptType" name="promptType" 
-                                       placeholder="例: ニュース記事、レビュー記事、ハウツー記事、技術解説" required>
+                                <select class="form-select" id="promptType" name="promptType" required>
+                                    <option value="">選択してください</option>
+                                    <option value="ニュース記事">ニュース記事</option>
+                                    <option value="レビュー記事">レビュー記事</option>
+                                    <option value="ハウツー記事">ハウツー記事</option>
+                                    <option value="技術解説記事">技術解説記事</option>
+                                    <option value="コラム記事">コラム記事</option>
+                                    <option value="インタビュー記事">インタビュー記事</option>
+                                    <option value="比較記事">比較記事</option>
+                                    <option value="まとめ記事">まとめ記事</option>
+                                    <option value="ランキング記事">ランキング記事</option>
+                                    <option value="その他">その他</option>
+                                </select>
                                 <div class="form-text">
-                                    作成したいプロンプトの種類を入力してください。
+                                    作成したいプロンプトの種類を選択してください。
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="targetAudience" class="form-label">ターゲット読者</label>
-                                <input type="text" class="form-control" id="targetAudience" name="targetAudience" 
-                                       placeholder="例: 初心者、ビジネスパーソン、学生">
+                                <select class="form-select" id="targetAudience" name="targetAudience">
+                                    <option value="">選択してください</option>
+                                    <option value="初心者">初心者</option>
+                                    <option value="中級者">中級者</option>
+                                    <option value="上級者">上級者</option>
+                                    <option value="ビジネスパーソン">ビジネスパーソン</option>
+                                    <option value="学生">学生</option>
+                                    <option value="主婦・主夫">主婦・主夫</option>
+                                    <option value="シニア">シニア</option>
+                                    <option value="一般向け">一般向け</option>
+                                    <option value="専門家">専門家</option>
+                                </select>
                                 <div class="form-text">
-                                    想定する読者層を入力してください。
+                                    想定する読者層を選択してください。
                                 </div>
                             </div>
                         </div>
                     </div>
                     
+                    <!-- 記事設定 -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="contentStyle" class="form-label">コンテンツスタイル</label>
+                                <select class="form-select" id="contentStyle" name="contentStyle">
+                                    <option value="">選択してください</option>
+                                    <option value="親しみやすく、分かりやすい">親しみやすく、分かりやすい</option>
+                                    <option value="専門的で詳細">専門的で詳細</option>
+                                    <option value="カジュアルで軽快">カジュアルで軽快</option>
+                                    <option value="フォーマルで丁寧">フォーマルで丁寧</option>
+                                    <option value="ユーモアを交えた">ユーモアを交えた</option>
+                                    <option value="説明的で論理的">説明的で論理的</option>
+                                </select>
+                                <div class="form-text">
+                                    記事のトーンやスタイルを選択してください。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="articleLength" class="form-label">記事の長さ</label>
+                                <select class="form-select" id="articleLength" name="articleLength">
+                                    <option value="">選択してください</option>
+                                    <option value="短め（1000字程度）">短め（1000字程度）</option>
+                                    <option value="標準（2000字程度）">標準（2000字程度）</option>
+                                    <option value="長め（3000字程度）">長め（3000字程度）</option>
+                                    <option value="詳細（5000字以上）">詳細（5000字以上）</option>
+                                </select>
+                                <div class="form-text">
+                                    生成する記事の長さを選択してください。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="articleStructure" class="form-label">記事構成</label>
+                                <select class="form-select" id="articleStructure" name="articleStructure">
+                                    <option value="">選択してください</option>
+                                    <option value="導入→本文→まとめ">導入→本文→まとめ</option>
+                                    <option value="問題提起→解決策→まとめ">問題提起→解決策→まとめ</option>
+                                    <option value="比較→分析→結論">比較→分析→結論</option>
+                                    <option value="時系列順">時系列順</option>
+                                    <option value="重要度順">重要度順</option>
+                                    <option value="ランキング形式">ランキング形式</option>
+                                    <option value="カスタム構成">カスタム構成</option>
+                                </select>
+                                <div class="form-text">
+                                    記事の構成パターンを選択してください。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ランキング形式設定 -->
+                    <div class="row" id="rankingSettings" style="display: none;">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-trophy me-2"></i>ランキング形式設定
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="rankingCount" class="form-label">ランキング数</label>
+                                                <select class="form-select" id="rankingCount" name="rankingCount">
+                                                    <option value="">選択してください</option>
+                                                    <option value="3">3位</option>
+                                                    <option value="5">5位</option>
+                                                    <option value="10">10位</option>
+                                                    <option value="15">15位</option>
+                                                    <option value="20">20位</option>
+                                                    <option value="25">25位</option>
+                                                    <option value="30">30位</option>
+                                                    <option value="50">50位</option>
+                                                </select>
+                                                <div class="form-text">
+                                                    ランキングの上位何位までを紹介するか選択してください。
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="rankingCriteria" class="form-label">ランキング基準</label>
+                                                <select class="form-select" id="rankingCriteria" name="rankingCriteria">
+                                                    <option value="">選択してください</option>
+                                                    <option value="人気度・売上">人気度・売上</option>
+                                                    <option value="品質・評価">品質・評価</option>
+                                                    <option value="コストパフォーマンス">コストパフォーマンス</option>
+                                                    <option value="機能性">機能性</option>
+                                                    <option value="デザイン性">デザイン性</option>
+                                                    <option value="実用性">実用性</option>
+                                                    <option value="革新性">革新性</option>
+                                                    <option value="信頼性">信頼性</option>
+                                                    <option value="カスタム基準">カスタム基準</option>
+                                                </select>
+                                                <div class="form-text">
+                                                    ランキングの評価基準を選択してください。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="rankingFormat" class="form-label">ランキング形式</label>
+                                                <select class="form-select" id="rankingFormat" name="rankingFormat">
+                                                    <option value="">選択してください</option>
+                                                    <option value="順位→商品名→説明→評価">順位→商品名→説明→評価</option>
+                                                    <option value="順位→商品名→特徴→メリット・デメリット">順位→商品名→特徴→メリット・デメリット</option>
+                                                    <option value="順位→商品名→詳細レビュー→価格">順位→商品名→詳細レビュー→価格</option>
+                                                    <option value="順位→商品名→比較表→総合評価">順位→商品名→比較表→総合評価</option>
+                                                    <option value="カスタム形式">カスタム形式</option>
+                                                </select>
+                                                <div class="form-text">
+                                                    各ランキング項目の表示形式を選択してください。
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="rankingElements" class="form-label">ランキング要素</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="includeRankingNumber" name="includeRankingNumber" value="true" checked>
+                                                    <label class="form-check-label" for="includeRankingNumber">
+                                                        順位番号を表示
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="includeProductImage" name="includeProductImage" value="true">
+                                                    <label class="form-check-label" for="includeProductImage">
+                                                        商品画像の説明を含める
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="includePrice" name="includePrice" value="true">
+                                                    <label class="form-check-label" for="includePrice">
+                                                        価格情報を含める
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="includeRating" name="includeRating" value="true">
+                                                    <label class="form-check-label" for="includeRating">
+                                                        評価・スコアを含める
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="includeComparison" name="includeComparison" value="true">
+                                                    <label class="form-check-label" for="includeComparison">
+                                                        他商品との比較を含める
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label for="rankingIntroduction" class="form-label">ランキング導入文</label>
+                                                <textarea class="form-control" id="rankingIntroduction" name="rankingIntroduction" rows="2"
+                                                          placeholder="例: 今回は【テーマ】について、実際に使用した経験や調査結果に基づいて厳選したランキングをご紹介します。"></textarea>
+                                                <div class="form-text">
+                                                    ランキング記事の導入部分のテンプレートを入力してください。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEO・技術設定 -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="contentStyle" class="form-label">コンテンツスタイル</label>
-                                <input type="text" class="form-control" id="contentStyle" name="contentStyle" 
-                                       placeholder="例: 親しみやすく、専門的、カジュアル">
-                                <div class="form-text">
-                                    記事のトーンやスタイルを指定してください。
+                                <label for="seoRequirements" class="form-label">SEO要件</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="seoOptimization" name="seoOptimization" value="true">
+                                    <label class="form-check-label" for="seoOptimization">
+                                        SEO最適化を含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="keywordOptimization" name="keywordOptimization" value="true">
+                                    <label class="form-check-label" for="keywordOptimization">
+                                        キーワード最適化を含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="metaDescription" name="metaDescription" value="true">
+                                    <label class="form-check-label" for="metaDescription">
+                                        メタディスクリプション生成を含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="headingStructure" name="headingStructure" value="true">
+                                    <label class="form-check-label" for="headingStructure">
+                                        見出し構造の指定を含める
+                                    </label>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="additionalRequirements" class="form-label">追加要件</label>
-                                <input type="text" class="form-control" id="additionalRequirements" name="additionalRequirements" 
-                                       placeholder="例: SEO最適化、具体例を含める">
+                                <label for="contentElements" class="form-label">コンテンツ要素</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeExamples" name="includeExamples" value="true">
+                                    <label class="form-check-label" for="includeExamples">
+                                        具体例を含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeTips" name="includeTips" value="true">
+                                    <label class="form-check-label" for="includeTips">
+                                        実践的なTipsを含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeStatistics" name="includeStatistics" value="true">
+                                    <label class="form-check-label" for="includeStatistics">
+                                        統計データを含める
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeCallToAction" name="includeCallToAction" value="true">
+                                    <label class="form-check-label" for="includeCallToAction">
+                                        行動喚起を含める
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 追加要件 -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="additionalRequirements" class="form-label">追加要件・特別な指示</label>
+                                <textarea class="form-control" id="additionalRequirements" name="additionalRequirements" rows="3"
+                                          placeholder="例: &#10;- 専門用語は必ず説明を入れる&#10;- 読者の行動を促す文章にする&#10;- 信頼性の高い情報源を参照する&#10;- 特定の業界向けに調整する"></textarea>
                                 <div class="form-text">
-                                    特別な要件があれば入力してください。
+                                    特別な要件や指示があれば詳細に入力してください。
                                 </div>
                             </div>
                         </div>
@@ -353,17 +617,62 @@ function loadExample(type) {
     }
 }
 
+// ランキング形式設定の表示/非表示を制御
+function toggleRankingSettings() {
+    const articleStructure = document.getElementById('articleStructure').value;
+    const promptType = document.getElementById('promptType').value;
+    const rankingSettings = document.getElementById('rankingSettings');
+    
+    if (articleStructure === 'ランキング形式' || promptType === 'ランキング記事') {
+        rankingSettings.style.display = 'block';
+    } else {
+        rankingSettings.style.display = 'none';
+    }
+}
+
+// 記事構成とプロンプトタイプの変更を監視
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('articleStructure').addEventListener('change', toggleRankingSettings);
+    document.getElementById('promptType').addEventListener('change', toggleRankingSettings);
+});
+
 // AI生成フォーム送信処理
 document.getElementById('aiGenerationForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    const articleTheme = document.getElementById('articleTheme').value.trim();
     const promptType = document.getElementById('promptType').value.trim();
     const targetAudience = document.getElementById('targetAudience').value.trim();
     const contentStyle = document.getElementById('contentStyle').value.trim();
+    const articleLength = document.getElementById('articleLength').value.trim();
+    const articleStructure = document.getElementById('articleStructure').value.trim();
+    const seoOptimization = document.getElementById('seoOptimization').checked;
+    const keywordOptimization = document.getElementById('keywordOptimization').checked;
+    const metaDescription = document.getElementById('metaDescription').checked;
+    const headingStructure = document.getElementById('headingStructure').checked;
+    const includeExamples = document.getElementById('includeExamples').checked;
+    const includeTips = document.getElementById('includeTips').checked;
+    const includeStatistics = document.getElementById('includeStatistics').checked;
+    const includeCallToAction = document.getElementById('includeCallToAction').checked;
     const additionalRequirements = document.getElementById('additionalRequirements').value.trim();
     
+    // ランキング設定の値を取得
+    const rankingCount = document.getElementById('rankingCount').value.trim();
+    const rankingCriteria = document.getElementById('rankingCriteria').value.trim();
+    const rankingFormat = document.getElementById('rankingFormat').value.trim();
+    const includeRankingNumber = document.getElementById('includeRankingNumber').checked;
+    const includeProductImage = document.getElementById('includeProductImage').checked;
+    const includePrice = document.getElementById('includePrice').checked;
+    const includeRating = document.getElementById('includeRating').checked;
+    const includeComparison = document.getElementById('includeComparison').checked;
+    const rankingIntroduction = document.getElementById('rankingIntroduction').value.trim();
+    
+    if (!articleTheme) {
+        alert('記事テーマ例を入力してください。');
+        return;
+    }
     if (!promptType) {
-        alert('プロンプトタイプを入力してください。');
+        alert('プロンプトタイプを選択してください。');
         return;
     }
     
@@ -396,10 +705,30 @@ document.getElementById('aiGenerationForm').addEventListener('submit', function(
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+            article_theme: articleTheme,
             prompt_type: promptType,
             target_audience: targetAudience,
             content_style: contentStyle,
-            additional_requirements: additionalRequirements
+            article_length: articleLength,
+            article_structure: articleStructure,
+            seo_optimization: seoOptimization,
+            keyword_optimization: keywordOptimization,
+            meta_description: metaDescription,
+            heading_structure: headingStructure,
+            include_examples: includeExamples,
+            include_tips: includeTips,
+            include_statistics: includeStatistics,
+            include_call_to_action: includeCallToAction,
+            additional_requirements: additionalRequirements,
+            ranking_count: rankingCount,
+            ranking_criteria: rankingCriteria,
+            ranking_format: rankingFormat,
+            include_ranking_number: includeRankingNumber,
+            include_product_image: includeProductImage,
+            include_price: includePrice,
+            include_rating: includeRating,
+            include_comparison: includeComparison,
+            ranking_introduction: rankingIntroduction
         })
     })
     .then(response => response.json())
@@ -413,11 +742,47 @@ document.getElementById('aiGenerationForm').addEventListener('submit', function(
             document.getElementById('templateName').value = data.suggested_name;
             document.getElementById('templateContent').value = data.content;
             
-            // 成功メッセージ
-            setTimeout(() => {
-                progressDiv.style.display = 'none';
-                alert('AIがプロンプトを生成しました！内容を確認してから保存してください。');
-            }, 1000);
+            // 成功メッセージを表示
+            if (data.message) {
+                alert(data.message);
+            } else {
+                alert('AIがプロンプトを生成しました！');
+            }
+            
+            // 自動的に保存するか確認
+            if (confirm('生成されたプロンプトを自動的に保存しますか？')) {
+                // 自動保存
+                fetch('/prompts/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: data.suggested_name,
+                        content: data.content
+                    })
+                })
+                .then(response => response.json())
+                .then(saveData => {
+                    if (saveData.success) {
+                        alert('プロンプトを自動保存しました！');
+                        window.location.href = '/prompts';
+                    } else {
+                        alert('自動保存に失敗しました: ' + saveData.error);
+                        progressDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    alert('自動保存でエラーが発生しました: ' + error);
+                    progressDiv.style.display = 'none';
+                });
+            } else {
+                // 手動保存の場合は内容を表示
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                    alert('内容を確認してから手動で保存してください。');
+                }, 1000);
+            }
         } else {
             alert('エラー: ' + data.error);
             progressDiv.style.display = 'none';

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}履歴詳細 - {{ history_data.template_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('prompts') }}">
+                                <i class="fas fa-file-alt me-1"></i>プロンプト管理
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('prompt_history') }}">
+                                <i class="fas fa-history me-1"></i>生成履歴
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">詳細表示</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-file-alt me-2"></i>{{ history_data.template_name }}
+                </h1>
+                <p class="text-muted mb-0">
+                    履歴ファイル: {{ filename }}
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('prompt_history') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="deleteHistory('{{ filename }}')">
+                    <i class="fas fa-trash me-1"></i>削除
+                </button>
+            </div>
+        </div>
+
+        <!-- History Info -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>履歴情報
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>テンプレート名:</strong><br>
+                                <span class="text-muted">{{ history_data.template_name }}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>生成方法:</strong><br>
+                                {% if history_data.source == 'ai_generated' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-robot me-1"></i>AI生成
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-user me-1"></i>手動作成
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>作成日時:</strong><br>
+                                <small class="text-muted">{{ history_data.created_at[:19].replace('T', ' ') }}</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>ファイルサイズ:</strong><br>
+                                <span class="badge bg-secondary">{{ "%.1f"|format(history_data.file_size / 1024) }} KB</span>
+                            </div>
+                        </div>
+                        {% if history_data.prompt_type %}
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>プロンプトタイプ:</strong><br>
+                                <span class="badge bg-info">{{ history_data.prompt_type }}</span>
+                            </div>
+                            {% if history_data.target_audience %}
+                            <div class="col-6">
+                                <strong>ターゲット読者:</strong><br>
+                                <span class="text-muted">{{ history_data.target_audience }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools me-2"></i>操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if history_data.generated_content %}
+                            <button type="button" class="btn btn-primary" onclick="useGeneratedContent()">
+                                <i class="fas fa-magic me-1"></i>生成された内容を使用
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('create_prompt') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i>新しいプロンプトを作成
+                            </a>
+                            <a href="{{ url_for('prompt_history') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i>履歴一覧に戻る
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Content -->
+        {% if history_data.generated_content %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-magic me-2"></i>生成されたプロンプト内容
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="prompt-content bg-light p-3 rounded">
+                    <pre class="mb-0">{{ history_data.generated_content }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Generation Parameters -->
+        {% if history_data.source == 'ai_generated' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>AI生成パラメータ
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if history_data.prompt_type %}
+                    <div class="col-md-6">
+                        <strong>プロンプトタイプ:</strong><br>
+                        <span class="badge bg-info">{{ history_data.prompt_type }}</span>
+                    </div>
+                    {% endif %}
+                    {% if history_data.target_audience %}
+                    <div class="col-md-6">
+                        <strong>ターゲット読者:</strong><br>
+                        <span class="text-muted">{{ history_data.target_audience }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if history_data.content_style or history_data.additional_requirements %}
+                <hr>
+                <div class="row">
+                    {% if history_data.content_style %}
+                    <div class="col-md-6">
+                        <strong>コンテンツスタイル:</strong><br>
+                        <span class="text-muted">{{ history_data.content_style }}</span>
+                    </div>
+                    {% endif %}
+                    {% if history_data.additional_requirements %}
+                    <div class="col-md-6">
+                        <strong>追加要件:</strong><br>
+                        <span class="text-muted">{{ history_data.additional_requirements }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Original Content -->
+        {% if history_data.content %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>元のプロンプト内容
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="prompt-content bg-light p-3 rounded">
+                    <pre class="mb-0">{{ history_data.content }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteHistory(filename) {
+    if (confirm(`履歴ファイル "${filename}" を削除しますか？`)) {
+        // 削除処理（実際の実装ではAPIエンドポイントが必要）
+        alert('削除機能は実装中です。');
+    }
+}
+
+function useGeneratedContent() {
+    // 生成された内容を新しいプロンプト作成ページに渡す
+    const generatedContent = `{{ history_data.generated_content|replace('\n', '\\n')|replace('"', '\\"') }}`;
+    const templateName = `{{ history_data.template_name }}`;
+    
+    // ローカルストレージに保存
+    localStorage.setItem('generatedContent', generatedContent);
+    localStorage.setItem('templateName', templateName);
+    
+    // プロンプト作成ページにリダイレクト
+    window.location.href = '{{ url_for("create_prompt") }}';
+}
+
+// ページ読み込み時にローカルストレージから内容を復元
+document.addEventListener('DOMContentLoaded', function() {
+    const generatedContent = localStorage.getItem('generatedContent');
+    const templateName = localStorage.getItem('templateName');
+    
+    if (generatedContent && templateName) {
+        // 内容を復元してローカルストレージをクリア
+        document.getElementById('templateContent').value = generatedContent;
+        document.getElementById('templateName').value = templateName;
+        localStorage.removeItem('generatedContent');
+        localStorage.removeItem('templateName');
+    }
+});
+</script>
+{% endblock %}

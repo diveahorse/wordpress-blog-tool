@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}{{ history_data.title }} - 履歴詳細{% endblock %}
+
+{% block extra_css %}
+<style>
+.history-content {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.history-meta {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.comparison-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.original-content {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.improved-content {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 15px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('generation_history') }}">
+                                <i class="fas fa-history me-1"></i>生成履歴
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">詳細表示</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-{{ 'file-alt' if history_data.type == 'article' else 'code' if history_data.type == 'prompt' else 'chart-line' }} me-2"></i>
+                    {{ history_data.title }}
+                </h1>
+                <p class="text-muted mb-0">
+                    作成日時: {{ history_data.created_at }}
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('generation_history') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="deleteHistoryItem('{{ filename }}', '{{ history_data.title }}')">
+                    <i class="fas fa-trash me-1"></i>削除
+                </button>
+            </div>
+        </div>
+
+        <!-- History Meta Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>履歴情報
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-meta">
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>タイプ:</strong><br>
+                                    <span class="badge bg-{{ 'primary' if history_data.type == 'article' else 'success' if history_data.type == 'prompt' else 'warning' }}">
+                                        {{ '記事生成' if history_data.type == 'article' else 'プロンプト生成' if history_data.type == 'prompt' else 'プロンプト評価' }}
+                                    </span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>ファイルサイズ:</strong><br>
+                                    <span class="badge bg-secondary">{{ "%.1f"|format(history_data.file_size / 1024) }} KB</span>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>作成日時:</strong><br>
+                                    <span class="text-muted">{{ history_data.created_at }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>ファイル名:</strong><br>
+                                    <code class="small">{{ filename }}</code>
+                                </div>
+                            </div>
+                            {% if history_data.theme %}
+                            <hr>
+                            <div>
+                                <strong>テーマ:</strong><br>
+                                <span class="text-muted">{{ history_data.theme }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.template_name %}
+                            <hr>
+                            <div>
+                                <strong>テンプレート名:</strong><br>
+                                <span class="text-muted">{{ history_data.template_name }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.evaluation_type %}
+                            <hr>
+                            <div>
+                                <strong>評価タイプ:</strong><br>
+                                <span class="text-muted">{{ history_data.evaluation_type }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.article_theme %}
+                            <hr>
+                            <div>
+                                <strong>記事テーマ例:</strong><br>
+                                <span class="text-muted">{{ history_data.article_theme }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.article_length %}
+                            <hr>
+                            <div>
+                                <strong>記事の長さ:</strong><br>
+                                <span class="text-muted">{{ history_data.article_length }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.article_structure %}
+                            <hr>
+                            <div>
+                                <strong>記事構成:</strong><br>
+                                <span class="text-muted">{{ history_data.article_structure }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.seo_requirements %}
+                            <hr>
+                            <div>
+                                <strong>SEO要件:</strong><br>
+                                <span class="text-muted">{{ history_data.seo_requirements|join(', ') }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.content_elements %}
+                            <hr>
+                            <div>
+                                <strong>コンテンツ要素:</strong><br>
+                                <span class="text-muted">{{ history_data.content_elements|join(', ') }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.ranking_count %}
+                            <hr>
+                            <div>
+                                <strong>ランキング数:</strong><br>
+                                <span class="text-muted">{{ history_data.ranking_count }}位</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.ranking_criteria %}
+                            <hr>
+                            <div>
+                                <strong>ランキング基準:</strong><br>
+                                <span class="text-muted">{{ history_data.ranking_criteria }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.ranking_format %}
+                            <hr>
+                            <div>
+                                <strong>ランキング形式:</strong><br>
+                                <span class="text-muted">{{ history_data.ranking_format }}</span>
+                            </div>
+                            {% endif %}
+                            {% if history_data.ranking_elements %}
+                            <hr>
+                            <div>
+                                <strong>ランキング要素:</strong><br>
+                                <span class="text-muted">{{ history_data.ranking_elements|join(', ') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools me-2"></i>操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if history_data.type == 'article' %}
+                            <a href="{{ url_for('view_article', filename=filename) }}" class="btn btn-primary">
+                                <i class="fas fa-file-alt me-1"></i>記事を表示
+                            </a>
+                            {% endif %}
+                            {% if history_data.type == 'prompt' %}
+                            <a href="{{ url_for('prompts') }}" class="btn btn-primary">
+                                <i class="fas fa-code me-1"></i>プロンプト管理
+                            </a>
+                            {% endif %}
+                            {% if history_data.type == 'evaluation' %}
+                            <a href="{{ url_for('view_prompt', template_name=history_data.template_name) }}" class="btn btn-primary">
+                                <i class="fas fa-eye me-1"></i>テンプレートを表示
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('generation_history') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i>履歴一覧に戻る
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Display -->
+        {% if history_data.type == 'article' %}
+        <!-- Article Content -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>記事内容
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="history-content">{{ history_data.content }}</div>
+            </div>
+        </div>
+        
+        {% elif history_data.type == 'prompt' %}
+        <!-- Prompt Content -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-code me-2"></i>プロンプト内容
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="history-content">{{ history_data.generated_content }}</div>
+            </div>
+        </div>
+        
+        {% elif history_data.type == 'evaluation' %}
+        <!-- Evaluation Content -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>評価・改善結果
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="comparison-section">
+                    <h6>元のプロンプト:</h6>
+                    <div class="original-content">{{ history_data.original_content }}</div>
+                    
+                    <h6>改善されたプロンプト:</h6>
+                    <div class="improved-content">{{ history_data.improved_content }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">履歴削除の確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>履歴「<span id="deleteHistoryTitle"></span>」を削除しますか？</p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    この操作は取り消せません。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteHistoryItem(filename, title) {
+    document.getElementById('deleteHistoryTitle').textContent = title;
+    document.getElementById('deleteForm').action = `/history/delete/${filename}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}生成履歴 - 詳細{% endblock %}
+
+{% block extra_css %}
+<style>
+.history-item {
+    transition: all 0.3s ease;
+}
+
+.history-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.history-meta {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.history-content {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.status-badge {
+    font-size: 0.8rem;
+}
+
+.filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.pagination-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-1"></i>ホーム
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">生成履歴</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-history me-2"></i>生成履歴
+                </h1>
+                <p class="text-muted mb-0">
+                    過去に生成された記事とプロンプトの履歴
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshHistory()">
+                    <i class="fas fa-sync-alt me-1"></i>更新
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="typeFilter" class="form-label">タイプ</label>
+                    <select class="form-select" id="typeFilter">
+                        <option value="">すべて</option>
+                        <option value="article">記事生成</option>
+                        <option value="prompt">プロンプト生成</option>
+                        <option value="evaluation">プロンプト評価</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label">期間</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="">すべて</option>
+                        <option value="today">今日</option>
+                        <option value="week">過去1週間</option>
+                        <option value="month">過去1ヶ月</option>
+                        <option value="year">過去1年</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="searchFilter" class="form-label">検索</label>
+                    <input type="text" class="form-control" id="searchFilter" 
+                           placeholder="テーマ、テンプレート名、内容で検索...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="fas fa-search me-1"></i>検索
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History List -->
+        <div class="row" id="historyList">
+            {% for history_item in history_items %}
+            <div class="col-12 mb-3">
+                <div class="card history-item">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">
+                                    <i class="fas fa-{{ 'file-alt' if history_item.type == 'article' else 'code' if history_item.type == 'prompt' else 'chart-line' }} me-2"></i>
+                                    {{ history_item.title }}
+                                </h6>
+                            </div>
+                            <div>
+                                <span class="badge bg-{{ 'primary' if history_item.type == 'article' else 'success' if history_item.type == 'prompt' else 'warning' }} status-badge">
+                                    {{ history_item.type_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="history-meta">
+                                    <div class="mb-2">
+                                        <strong>作成日時:</strong><br>
+                                        <span class="text-muted">{{ history_item.created_at }}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>ファイルサイズ:</strong><br>
+                                        <span class="badge bg-secondary">{{ "%.1f"|format(history_item.file_size / 1024) }} KB</span>
+                                    </div>
+                                    {% if history_item.theme %}
+                                    <div class="mb-2">
+                                        <strong>テーマ:</strong><br>
+                                        <span class="text-muted">{{ history_item.theme }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if history_item.template_name %}
+                                    <div class="mb-2">
+                                        <strong>テンプレート:</strong><br>
+                                        <span class="text-muted">{{ history_item.template_name }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="history-content">
+                                    {{ history_item.preview_content }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="btn-group" role="group">
+                                    <a href="{{ url_for('view_history_detail', filename=history_item.filename) }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i>詳細表示
+                                    </a>
+                                {% if history_item.type == 'article' %}
+                                    {% if history_item.post_url %}
+                                    <a href="{{ history_item.post_url }}" target="_blank" rel="nofollow noopener" 
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-external-link-alt me-1"></i>投稿を開く
+                                    </a>
+                                    {% elif history_item.can_view_local %}
+                                    <a href="{{ url_for('view_article', filename=history_item.filename) }}" 
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-file-alt me-1"></i>ローカル表示
+                                    </a>
+                                        <a href="{{ url_for('preview_from_history', filename=history_item.filename) }}" 
+                                           class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-search me-1"></i>プレビュー
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteHistoryItem('{{ history_item.filename }}', '{{ history_item.title }}')">
+                                    <i class="fas fa-trash me-1"></i>削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="履歴ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('generation_history', page=pagination.prev_num) }}">前へ</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.page_numbers %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('generation_history', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('generation_history', page=pagination.next_num) }}">次へ</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <div class="text-center pagination-info">
+            全 {{ pagination.total }} 件中 {{ history_items|length }} 件を表示
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">履歴削除の確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>履歴「<span id="deleteHistoryTitle"></span>」を削除しますか？</p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    この操作は取り消せません。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applyFilters() {
+    const typeFilter = document.getElementById('typeFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value;
+    
+    // URLパラメータを構築
+    const params = new URLSearchParams();
+    if (typeFilter) params.append('type', typeFilter);
+    if (dateFilter) params.append('date', dateFilter);
+    if (searchFilter) params.append('search', searchFilter);
+    
+    // ページをリロード
+    window.location.href = `{{ url_for('generation_history') }}?${params.toString()}`;
+}
+
+function refreshHistory() {
+    window.location.reload();
+}
+
+function deleteHistoryItem(filename, title) {
+    document.getElementById('deleteHistoryTitle').textContent = title;
+    document.getElementById('deleteForm').action = `/history/delete/${filename}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// 検索フィールドでEnterキーを押した時の処理
+document.getElementById('searchFilter').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+</script>
+{% endblock %}

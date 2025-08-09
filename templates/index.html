@@ -13,6 +13,14 @@
             <p class="lead text-muted">
                 AIを活用して高品質なブログ記事を自動生成し、WordPressに直接投稿できます
             </p>
+            <div class="mt-3">
+                <a href="{{ url_for('generation_history') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-history me-1"></i>生成履歴を表示
+                </a>
+                <a href="{{ url_for('prompts') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-file-alt me-1"></i>プロンプト管理
+                </a>
+            </div>
         </div>
 
         <!-- Connection Test -->
@@ -48,9 +56,9 @@
                             <i class="fas fa-lightbulb me-1"></i>記事のテーマ *
                         </label>
                         <input type="text" class="form-control" id="theme" name="theme" 
-                               placeholder="例: 健康な食事の作り方、効率的な時間管理術、AI技術の最新動向" required>
+                               placeholder="例: 健康な食事の作り方、効率的な時間管理術、AI技術の最新動向、感動するアニメランキング" required>
                         <div class="form-text">
-                            記事のテーマやトピックを具体的に入力してください。
+                            記事のテーマやトピックを具体的に入力してください。アニメランキングの場合は自動で画像が添付されます。
                         </div>
                     </div>
 
@@ -120,9 +128,32 @@
             <div class="card-body">
                 <div class="progress mb-3">
                     <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                         role="progressbar" style="width: 0%"></div>
+                         role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
                 <p id="currentStep" class="text-muted mb-0">初期化中...</p>
+                
+                <!-- 画像添付進捗 -->
+                <div id="imageProgress" class="mt-3" style="display: none;">
+                    <h6><i class="fas fa-image me-1"></i>画像添付状況</h6>
+                    <div id="imageStatus" class="small text-muted"></div>
+                    <div id="imageProgressBar" class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar progress-bar-info" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- 詳細な進捗情報 -->
+                <div id="detailedProgress" class="mt-3" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">処理時間</small>
+                            <div id="elapsedTime">00:00</div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">推定残り時間</small>
+                            <div id="estimatedTime">--:--</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -147,6 +178,11 @@
             </div>
             <div class="card-body">
                 <div id="errorContent"></div>
+                <div class="mt-3">
+                    <button class="btn btn-outline-danger" onclick="retryGeneration()">
+                        <i class="fas fa-redo me-1"></i>再試行
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -169,12 +205,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultContent = document.getElementById('resultContent');
     const errorContent = document.getElementById('errorContent');
     const generateBtn = document.getElementById('generateBtn');
+    const imageProgress = document.getElementById('imageProgress');
+    const imageStatus = document.getElementById('imageStatus');
+    const imageProgressBar = document.getElementById('imageProgressBar');
+    const detailedProgress = document.getElementById('detailedProgress');
+    const elapsedTime = document.getElementById('elapsedTime');
+    const estimatedTime = document.getElementById('estimatedTime');
+
+    let startTime = null;
+    let progressInterval = null;
 
     // プロンプトテンプレートの説明を更新
     promptType.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const description = selectedOption.getAttribute('data-description');
         templateDescription.textContent = description;
+        
+        // アニメランキングテンプレートが選択された場合の説明
+        if (this.value.includes('ランキング')) {
+            templateDescription.innerHTML = description + ' <span class="badge bg-info">画像自動添付対応</span>';
+        }
     });
 
     // 接続テスト
@@ -230,6 +280,10 @@ document.addEventListener('DOMContentLoaded', function() {
         progressSection.style.display = 'block';
         resultSection.style.display = 'none';
         errorSection.style.display = 'none';
+        
+        // 進捗追跡を開始
+        startTime = new Date();
+        startProgressTracking();
 
         // 記事生成を開始
         fetch('/generate', {
@@ -253,6 +307,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function startProgressTracking() {
+        progressInterval = setInterval(() => {
+            if (startTime) {
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                elapsedTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    function stopProgressTracking() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+
     function monitorProgress() {
         const interval = setInterval(() => {
             fetch('/status')
@@ -261,10 +333,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 進捗バーを更新
                     progressBar.style.width = data.progress + '%';
                     progressBar.textContent = data.progress + '%';
+                    progressBar.setAttribute('aria-valuenow', data.progress);
                     currentStep.textContent = data.current_step;
+
+                    // 画像添付状況を表示
+                    if (data.current_step && data.current_step.includes('画像')) {
+                        imageProgress.style.display = 'block';
+                        imageStatus.textContent = data.current_step;
+                        
+                        // 画像進捗バーを更新（推定）
+                        const imageProgressPercent = Math.min(data.progress - 70, 20);
+                        const imageProgressBarInner = imageProgressBar.querySelector('.progress-bar');
+                        imageProgressBarInner.style.width = imageProgressPercent + '%';
+                    }
+
+                    // 詳細進捗を表示
+                    if (data.progress > 10) {
+                        detailedProgress.style.display = 'block';
+                    }
 
                     if (!data.is_generating) {
                         clearInterval(interval);
+                        stopProgressTracking();
                         
                         if (data.error) {
                             showError(data.error);
@@ -280,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     clearInterval(interval);
+                    stopProgressTracking();
                     showError('進捗の取得でエラーが発生しました: ' + error);
                     generateBtn.disabled = false;
                     generateBtn.innerHTML = '<i class="fas fa-magic me-2"></i>記事を生成して投稿';
@@ -289,6 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showResult(result) {
+        const statusBadge = result.status === 'publish' ? 
+            '<span class="badge bg-success">公開</span>' : 
+            '<span class="badge bg-warning">下書き</span>';
+        
         resultContent.innerHTML = `
             <div class="alert alert-success">
                 <h6><i class="fas fa-check-circle me-1"></i>記事の生成と投稿が完了しました！</h6>
@@ -300,9 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-6">
                     <h6><i class="fas fa-tag me-1"></i>ステータス</h6>
-                    <span class="badge bg-${result.status === 'publish' ? 'success' : 'warning'}">
-                        ${result.status === 'publish' ? '公開' : '下書き'}
-                    </span>
+                    ${statusBadge}
                 </div>
             </div>
             <div class="row">
@@ -317,6 +410,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-muted">${result.post_id}</p>
                 </div>
             </div>
+            <div class="mt-3">
+                <button class="btn btn-outline-primary" onclick="window.open('${result.post_url}', '_blank')">
+                    <i class="fas fa-external-link-alt me-1"></i>記事を開く
+                </button>
+                <button class="btn btn-outline-secondary" onclick="copyToClipboard('${result.post_url}')">
+                    <i class="fas fa-copy me-1"></i>URLをコピー
+                </button>
+            </div>
         `;
         resultSection.style.display = 'block';
     }
@@ -329,6 +430,30 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         errorSection.style.display = 'block';
     }
+
+    // 再試行機能
+    window.retryGeneration = function() {
+        errorSection.style.display = 'none';
+        form.dispatchEvent(new Event('submit'));
+    };
+
+    // URLコピー機能
+    window.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // コピー成功のフィードバック
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>コピー完了';
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    };
 });
 </script>
 {% endblock %}

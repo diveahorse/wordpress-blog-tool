@@ -125,6 +125,9 @@
                             <a href="{{ url_for('index') }}?prompt_type={{ template_name }}" class="btn btn-primary">
                                 <i class="fas fa-magic me-1"></i>このテンプレートで記事生成
                             </a>
+                            <a href="{{ url_for('evaluate_prompt', template_name=template_name) }}" class="btn btn-info">
+                                <i class="fas fa-chart-line me-1"></i>評価・改善
+                            </a>
                             <a href="{{ url_for('edit_prompt', template_name=template_name) }}" class="btn btn-warning">
                                 <i class="fas fa-edit me-1"></i>テンプレートを編集
                             </a>

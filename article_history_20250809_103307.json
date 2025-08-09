@@ -1,0 +1,15 @@
+{
+  "theme": "友情系　アニメ　ランキング",
+  "prompt_type": "アニメランキングSEO最適化",
+  "status": "publish",
+  "max_tokens": 8192,
+  "result": {
+    "title": "友情系　アニメ　ランキングについて",
+    "content": "",
+    "post_id": 38,
+    "post_url": "https://open-blogging.com/2025/08/09/%e5%8f%8b%e6%83%85%e7%b3%bb%e3%80%80%e3%82%a2%e3%83%8b%e3%83%a1%e3%80%80%e3%83%a9%e3%83%b3%e3%82%ad%e3%83%b3%e3%82%b0%e3%81%ab%e3%81%a4%e3%81%84%e3%81%a6/",
+    "status": "publish"
+  },
+  "created_at": "2025-08-09T10:33:07.406885",
+  "source": "article_generation"
+}

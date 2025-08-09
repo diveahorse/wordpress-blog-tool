@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}プレビュー - {{ template.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.prompt-content {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.preview-article {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.preview-article h1, .preview-article h2, .preview-article h3 {
+    color: #2c3e50;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.preview-article p {
+    margin-bottom: 1rem;
+}
+
+.preview-article ul, .preview-article ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('prompts') }}">
+                                <i class="fas fa-file-alt me-1"></i>プロンプト管理
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('view_prompt', template_name=template_name) }}">
+                                {{ template.name }}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">プレビュー</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 mb-1">
+                    <i class="fas fa-eye me-2"></i>{{ template.name }} - プレビュー
+                </h1>
+                <p class="text-muted mb-0">
+                    プロンプトテンプレートのプレビューとテスト
+                </p>
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('view_prompt', template_name=template_name) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>戻る
+                </a>
+                <a href="{{ url_for('edit_prompt', template_name=template_name) }}" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i>編集
+                </a>
+            </div>
+        </div>
+
+        <!-- Preview Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>プレビュー設定
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="previewTheme" class="form-label">テスト用テーマ</label>
+                            <input type="text" class="form-control" id="previewTheme" 
+                                   value="{{ sample_theme }}" placeholder="例: 健康な食事の作り方">
+                            <div class="form-text">
+                                プロンプトテンプレートをテストするためのテーマを入力してください。
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">プレビュー操作</label>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary" onclick="generatePreview()">
+                                    <i class="fas fa-magic me-1"></i>プレビュー記事を生成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompt Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-code me-2"></i>プロンプトプレビュー
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="prompt-content" id="promptPreview">
+                    {{ preview_content }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Article Preview -->
+        <div class="card" id="articlePreviewCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-newspaper me-2"></i>生成された記事プレビュー
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="articlePreview" class="preview-article">
+                    <!-- 生成された記事がここに表示されます -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="card" id="loadingCard" style="display: none;">
+            <div class="card-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">読み込み中...</span>
+                </div>
+                <p class="text-muted mb-0">AIが記事を生成中...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// プレビューテーマの変更時にプロンプトプレビューを更新
+document.getElementById('previewTheme').addEventListener('input', function() {
+    updatePromptPreview();
+});
+
+// プロンプトプレビューを更新
+function updatePromptPreview() {
+    const theme = document.getElementById('previewTheme').value || '{{ sample_theme }}';
+    const originalContent = `{{ template.content|replace('\n', '\\n')|replace('"', '\\"') }}`;
+    const previewContent = originalContent.replace(/{theme}/g, theme);
+    
+    document.getElementById('promptPreview').textContent = previewContent;
+}
+
+// プレビュー記事を生成
+function generatePreview() {
+    const theme = document.getElementById('previewTheme').value.trim();
+    
+    if (!theme) {
+        alert('テスト用テーマを入力してください。');
+        return;
+    }
+    
+    // ローディング表示
+    document.getElementById('loadingCard').style.display = 'block';
+    document.getElementById('articlePreviewCard').style.display = 'none';
+    
+    // APIに送信
+    fetch('/prompts/preview/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            template_name: '{{ template_name }}',
+            theme: theme
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // ローディング非表示
+        document.getElementById('loadingCard').style.display = 'none';
+        
+        if (data.success) {
+            // 生成された記事を表示
+            document.getElementById('articlePreview').innerHTML = data.article.replace(/\n/g, '<br>');
+            document.getElementById('articlePreviewCard').style.display = 'block';
+        } else {
+            alert('エラー: ' + data.error);
+        }
+    })
+    .catch(error => {
+        document.getElementById('loadingCard').style.display = 'none';
+        alert('エラーが発生しました: ' + error);
+    });
+}
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    updatePromptPreview();
+});
+</script>
+{% endblock %}
